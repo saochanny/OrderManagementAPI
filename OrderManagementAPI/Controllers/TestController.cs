@@ -1,12 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
+using OrderManagementAPI.Exceptions;
+using OrderManagementAPI.Response;
 
 namespace OrderManagementAPI.Controllers;
 
-public class TestController : Controller
+[Route("api/[controller]")]
+[ApiController]
+public class TestController : ControllerBase
 {
-    // GET
+    [HttpGet("test")]
     public IActionResult Index()
     {
-        return View();
+        var a = 10;
+        var b = 0;
+        return BaseBodyResponse.Success(a / b, "Sucess");
     }
 }

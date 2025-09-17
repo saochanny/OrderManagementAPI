@@ -1,6 +1,3 @@
 namespace OrderManagementAPI.Exceptions;
 
-public class BadRequestException
-{
-    
-}
+public class BadRequestException(string message) : BaseException(message);

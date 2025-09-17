@@ -1,7 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace facescan.Security;
+namespace OrderManagementAPI.Security; 
+
 
 public static class RsaDecryption
 {

@@ -1,29 +1,50 @@
 using System.Data;
-using facescan.Constants;
-using facescan.Exceptions;
 using Dapper;
 using Microsoft.Data.SqlClient;
+using OrderManagementAPI.Constants;
+using OrderManagementAPI.Exceptions;
 
-namespace facescan.Utilizes;
+namespace OrderManagementAPI.Utilizes;
 
+/// <summary>
+/// Utility class for executing database operations using Dapper.
+/// Supports queries, commands, and transaction handling in a generic and reusable way.
+/// </summary>
 public class DapperDaoUtilize(IConfiguration pvConfiguration)
 {
+    /// <summary>
+    /// Executes a SQL query and returns the results as an enumerable of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the query result.</typeparam>
+    /// <param name="query">The SQL query string.</param>
+    /// <param name="parameters">Optional query parameters.</param>
+    /// <returns>An <see cref="IEnumerable{T}"/> of results.</returns>
+    /// <exception cref="AppException">Thrown if connection string is missing.</exception>
     public IEnumerable<T> ExecQuery<T>(string query, object? parameters = null)
     {
         var connectionString = pvConfiguration.GetConnectionString("DefaultConnection")
-                               ?? throw new AppException(Strings.DataSourceNotFound);
+                               ?? throw new AppException(MessageConstant.DataSourceNotFound);
         using IDbConnection db = new SqlConnection(connectionString);
 
         return db.Query<T>(query, parameters);
     }
 
 
+    /// <summary>
+    /// Executes a SQL query within a transaction asynchronously and returns the results.
+    /// Commits the transaction if successful, rolls back if any exception occurs.
+    /// </summary>
+    /// <typeparam name="T">The type of the query result.</typeparam>
+    /// <param name="query">The SQL query string.</param>
+    /// <param name="parameters">Optional query parameters.</param>
+    /// <returns>A task representing the asynchronous operation returning <see cref="IEnumerable{T}"/> results.</returns>
+    /// <exception cref="AppException">Thrown if connection string is missing.</exception>
     public async Task<IEnumerable<T>> ExecQueryWithTransactionAsync<T>(
-     string query,
-     object? parameters = null)
+        string query,
+        object? parameters = null)
     {
         var connectionString = pvConfiguration.GetConnectionString("DefaultConnection")
-                               ?? throw new AppException(Strings.DataSourceNotFound);
+                               ?? throw new AppException(MessageConstant.DataSourceNotFound);
 
         await using var conn = new SqlConnection(connectionString);
         await conn.OpenAsync();
@@ -42,11 +63,20 @@ public class DapperDaoUtilize(IConfiguration pvConfiguration)
         }
     }
 
+
+    /// <summary>
+    /// Executes a SQL command (INSERT, UPDATE, DELETE) and returns the affected row count and optionally the affected data.
+    /// </summary>
+    /// <typeparam name="T">The type representing the data affected by the command.</typeparam>
+    /// <param name="query">The SQL command string.</param>
+    /// <param name="parameters">Optional command parameters.</param>
+    /// <returns>A tuple containing the number of affected rows and optionally the affected data.</returns>
+    /// <exception cref="AppException">Thrown if connection string is missing.</exception>
     public (int RowsAffected, object? AffectedData) ExecCommand<T>(string query,
         object? parameters = null)
     {
         var connectionString = pvConfiguration.GetConnectionString("DefaultConnection")
-                               ?? throw new AppException(Strings.DataSourceNotFound);
+                               ?? throw new AppException(MessageConstant.DataSourceNotFound);
         using IDbConnection db = new SqlConnection(connectionString);
         // Execute command and get affected row count
         var rowsAffected = db.Execute(query, parameters);
@@ -60,18 +90,34 @@ public class DapperDaoUtilize(IConfiguration pvConfiguration)
         return (rowsAffected, affectedData);
     }
 
-   public async Task<int> QueryIntValueAsync(string query, object parameters)
-{
-    var connectionString = pvConfiguration.GetConnectionString("DefaultConnection")
-                           ?? throw new AppException("Missing connection string");
-    using var db = new SqlConnection(connectionString);
-    return await db.ExecuteScalarAsync<int>(query, parameters);
-}
 
-    public string QueryStringValue(string query, object? parameters = null)
+    /// <summary>
+    /// Executes a SQL query that returns a single integer value asynchronously.
+    /// </summary>
+    /// <param name="query">The SQL query string.</param>
+    /// <param name="parameters">Query parameters.</param>
+    /// <returns>The integer value returned by the query.</returns>
+    /// <exception cref="AppException">Thrown if connection string is missing.</exception>
+    public async Task<int> QueryIntValueAsync(string query, object parameters)
     {
         var connectionString = pvConfiguration.GetConnectionString("DefaultConnection")
-                               ?? throw new AppException(Strings.DataSourceNotFound);
+                               ?? throw new AppException("Missing connection string");
+        await using var db = new SqlConnection(connectionString);
+        return await db.ExecuteScalarAsync<int>(query, parameters);
+    }
+
+
+    /// <summary>
+    /// Executes a SQL query that returns a single string value.
+    /// </summary>
+    /// <param name="query">The SQL query string.</param>
+    /// <param name="parameters">Optional query parameters.</param>
+    /// <returns>The string value returned by the query, or null if no result is found.</returns>
+    /// <exception cref="AppException">Thrown if connection string is missing.</exception>
+    public string? QueryStringValue(string query, object? parameters = null)
+    {
+        var connectionString = pvConfiguration.GetConnectionString("DefaultConnection")
+                               ?? throw new AppException(MessageConstant.DataSourceNotFound);
 
         using IDbConnection db = new SqlConnection(connectionString);
 
@@ -83,13 +129,20 @@ public class DapperDaoUtilize(IConfiguration pvConfiguration)
     }
 
 
+    /// <summary>
+    /// Executes a custom asynchronous action within a database transaction.
+    /// Commits the transaction if successful; rolls back if any exception occurs.
+    /// </summary>
+    /// <param name="action">A function that takes an <see cref="IDbConnection"/> and <see cref="IDbTransaction"/> and performs operations asynchronously.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="AppException">Thrown if connection string is missing.</exception>
     public async Task ExecuteInTransactionAsync(Func<IDbConnection, IDbTransaction, Task> action)
     {
         var connectionString = pvConfiguration.GetConnectionString("DefaultConnection")!;
-        using var connection = new SqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync();
 
-        using var transaction = connection.BeginTransaction();
+        await using var transaction = connection.BeginTransaction();
         try
         {
             await action(connection, transaction);

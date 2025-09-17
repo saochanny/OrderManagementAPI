@@ -1,6 +1,12 @@
 namespace OrderManagementAPI.Exceptions;
 
-public class UnauthorizedException
+public class UnauthorizedException : Exception
 {
-    
+    public UnauthorizedException() : base("Unauthorized")
+    {
+    }
+
+    public UnauthorizedException(string message) : base(message)
+    {
+    }
 }

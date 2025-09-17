@@ -1,4 +1,4 @@
-namespace facescan.Constants;
+namespace OrderManagementAPI.Constants;
 
 public enum Operators
 {
