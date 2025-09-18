@@ -3,11 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using OrderManagementAPI.Config;
 using OrderManagementAPI.Dto;
 using OrderManagementAPI.Exceptions;
+using OrderManagementAPI.Security;
 using OrderManagementAPI.Utilizes;
 
 namespace OrderManagementAPI.Services.Impl;
 
-public class AuthenticationServiceImpl(ApplicationDbContext context, IConfiguration config) : IAuthenticationService
+public class AuthenticationServiceImpl(ApplicationDbContext context,IPasswordEncoder passwordEnder, IConfiguration config) : IAuthenticationService
 {
     private static readonly ILog Log = LogManager.GetLogger(typeof(AuthenticationServiceImpl));
 
@@ -18,7 +19,7 @@ public class AuthenticationServiceImpl(ApplicationDbContext context, IConfigurat
             .ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u =>
                 u.IsActive == true && (u.Username == loginRequest.Username || u.Email == loginRequest.Username));
         
-        if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password))
+        if (user == null || !passwordEnder.Verify(loginRequest.Password, user.Password))
         {
             throw new UnauthorizedException("Invalid username or password");
         }

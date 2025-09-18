@@ -22,6 +22,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<Role> Roles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
     
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    
     
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -34,37 +38,6 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        /*var entityTypes = Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false, Namespace: "OderManagementAPI.Models" });
-
-        foreach (var entityType in entityTypes)
-        {
-            // If the entity has a primary key, configure it as a regular entity
-            var keyProperty = entityType.GetProperties().FirstOrDefault(p => p.Name == "Id");
-
-            if (keyProperty != null)
-            {
-                // Register the entity with a primary key
-                var entityMethod = typeof(ModelBuilder)
-                    .GetMethod("Entity", []);
-
-                // Make sure the Entity<T> method is invoked correctly for the entity type
-                var genericEntityMethod = entityMethod?.MakeGenericMethod(entityType);
-                genericEntityMethod?.Invoke(modelBuilder, null);
-            }
-            else
-            {
-                // If no primary key is found, treat it as a keyless entity
-                typeof(ModelBuilder)
-                    .GetMethod("Entity", [])
-                    ?.MakeGenericMethod(entityType);
-
-                // Use the keyless method to register the entity
-                var entityBuilder = modelBuilder.Entity(entityType);
-                entityBuilder.HasNoKey();
-            }
-        }*/
         
         // --- Explicit configuration for UserRole (composite key + relationships) ---
         modelBuilder.Entity<UserRole>()
@@ -130,6 +103,28 @@ public class ApplicationDbContext : DbContext
                 AssignedAt = new DateTime(2025, 9, 18, 0, 0, 0, DateTimeKind.Utc)
             }
         );
+        
+        // Soft delete filter
+        modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
+        
+        // Customer
+        modelBuilder.Entity<Customer>()
+            .HasIndex(c => c.Email)
+            .IsUnique(); // optional: unique email
+
+        // Order relationship
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.Customer)
+            .WithMany(c => c.Orders)
+            .HasForeignKey(o => o.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict); // prevent deleting customer with orders
+
+        // OrderItem relationship
+        modelBuilder.Entity<OrderItem>()
+            .HasOne(oi => oi.Order)
+            .WithMany(o => o.Items)
+            .HasForeignKey(oi => oi.OrderId)
+            .OnDelete(DeleteBehavior.Cascade); // delete items when order is deleted
 
         
 

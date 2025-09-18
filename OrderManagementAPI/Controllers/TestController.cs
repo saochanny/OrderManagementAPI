@@ -8,11 +8,5 @@ namespace OrderManagementAPI.Controllers;
 [ApiController]
 public class TestController : ControllerBase
 {
-    [HttpGet("test")]
-    public IActionResult Index()
-    {
-        var a = 10;
-        var b = 0;
-        return BaseBodyResponse.Success(a / b, "Sucess");
-    }
+    
 }

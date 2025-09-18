@@ -51,6 +51,7 @@ public class GlobalExceptionHandler(RequestDelegate next)
             BadRequestException => StatusCodes.Status400BadRequest,
             ForbiddenException => StatusCodes.Status403Forbidden,
             ApiException apiEx => apiEx.StatusCode,
+            UnauthorizedException => StatusCodes.Status401Unauthorized,
             UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
             AppException appException => appException.StatusCode,
             _ => StatusCodes.Status500InternalServerError
@@ -64,6 +65,7 @@ public class GlobalExceptionHandler(RequestDelegate next)
             BadRequestException _ => exception.Message,
             ForbiddenException _ => exception.Message,
             ValidationException validationEx => string.Join("; ", validationEx.Errors),
+            UnauthorizedException => exception.Message,
             UnauthorizedAccessException => exception.Message,
             AppException appEx => appEx.Message,
             _ => $"Internal server error : {exception.Message}"

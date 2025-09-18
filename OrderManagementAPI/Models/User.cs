@@ -1,7 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace OrderManagementAPI.Models;
 
+[Index(nameof(Username), IsUnique = true)]
+[Index(nameof(Email), IsUnique = true)]
+[Index(nameof(Phone), IsUnique = true)]
 public class User
 {
     [Key]

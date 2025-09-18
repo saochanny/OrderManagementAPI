@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using OrderManagementAPI.Config;
 using OrderManagementAPI.Infrastructure.Authentication;
 using OrderManagementAPI.Middleware;
+using OrderManagementAPI.Security;
 using OrderManagementAPI.Services;
 using OrderManagementAPI.Services.Impl;
 using OrderManagementAPI.Utilizes;
@@ -74,9 +75,9 @@ builder.Services.AddScoped<EntityFrmwkDaoUtil>();
 // -------------- End register repositories -------------- //
 
 // -------------- Register services -------------- //
+builder.Services.AddScoped<IPasswordEncoder, PasswordEncoder>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationServiceImpl>();
-//builder.Services.AddScoped<ICommonCodeService, CommonCodeServiceImpl>();
-//builder.Services.AddScoped<IHolidayService, HolidayImpl>();
+builder.Services.AddScoped<IUserService, UserServiceImpl>();
 //builder.Services.AddScoped<IPersonSevice, PersonServiceImpl>();
 //builder.Services.AddScoped<IDeviceService, DeviceServiceImpl>();
 //builder.Services.AddScoped<IAccessLevelService, AccesslevelImplService>();
@@ -93,6 +94,7 @@ builder.Services.AddControllers()
 
 // Add JWT Authentication from extension
 builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddAuthorization();
 
 
 // Add services to the container.
@@ -146,6 +148,7 @@ var app = builder.Build();
 // Use CORS
 app.UseCors("AllowAll");
 
+app.UseMiddleware<AuthenticationExceptionHandler>();
 app.UseMiddleware<GlobalExceptionHandler>();
 
 // -------------- Log4Net and Telemetry log config (Add TraceId and SpanId) -------------- //
@@ -167,6 +170,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+
+// MUST be before UseAuthorization
+app.UseAuthentication();
+
+// UseAuthorization comes AFTER UseAuthentication
+app.UseAuthorization();
 
 app.MapControllers();
 
