@@ -10,7 +10,7 @@ namespace OrderManagementAPI.Utilizes;
 /// Utility class for executing database operations using Dapper.
 /// Supports queries, commands, and transaction handling in a generic and reusable way.
 /// </summary>
-public class DapperDaoUtilize(IConfiguration pvConfiguration)
+public class DapperDaoUtil(IConfiguration pvConfiguration)
 {
     /// <summary>
     /// Executes a SQL query and returns the results as an enumerable of type <typeparamref name="T"/>.

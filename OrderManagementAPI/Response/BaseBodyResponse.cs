@@ -15,7 +15,7 @@ public class BaseBodyResponse
     public StatusResponse? Status { get; set; }
     
     
-    // ✅ Success with data
+    // Success with data
     public static IActionResult Success(object data, string message = "Success")
     {
         var response = new BaseBodyResponse
@@ -32,7 +32,7 @@ public class BaseBodyResponse
         };
     }
     
-    // ✅ Success with message only
+    // Success with message only
     public static IActionResult SuccessMessage(string message = "Success")
     {
         var response = new BaseBodyResponse
@@ -47,7 +47,7 @@ public class BaseBodyResponse
         };
     }
     
-    // ✅ Failed
+    // Failed
     public static IActionResult Failed(int statusCode, string message)
     {
         var response = new BaseBodyResponse
@@ -62,7 +62,7 @@ public class BaseBodyResponse
         };
     }
     
-    // ✅ Body failed (returns object, not IActionResult)
+    // Body failed (returns object, not IActionResult)
     public static BaseBodyResponse BodyFailed(int statusCode, string message)
     {
         return new BaseBodyResponse

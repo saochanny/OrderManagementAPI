@@ -11,7 +11,7 @@ namespace OrderManagementAPI.Utilizes;
 /// Supports CRUD operations with optional filtering and dynamic property updates.
 /// </summary>
 
-public class EntityFrmwkDaoUtilize(IConfiguration pvConfiguration)
+public class EntityFrmwkDaoUtil(IConfiguration pvConfiguration)
 {
     
     
