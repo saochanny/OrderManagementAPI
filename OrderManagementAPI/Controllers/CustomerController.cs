@@ -1,33 +1,45 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OrderManagementAPI.Models;
-using OrderManagementAPI.Services.Impl;
+using OrderManagementAPI.Dto.Request;
+using OrderManagementAPI.Response;
+using OrderManagementAPI.Services;
+
 
 namespace OrderManagementAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class CustomersController : ControllerBase
+[Route("api/v1/customers")]
+public class CustomersController(ICustomerService customerService) : ControllerBase
 {
-    private readonly CustomerServiceImpl _service;
-
+    [Authorize(Roles = "Admin, Staff")]
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+    public async Task<IActionResult> GetAll() =>
+        BaseBodyResponse.Success(await customerService.GetAllAsync(), "Get all customers successfully");
+    
+    
+    [Authorize(Roles = "Admin, Staff")]
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById([FromRoute] int id) =>
+        BaseBodyResponse.Success(await customerService.GetByIdAsync(id), "Get customer by id successfully");
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
-    public async Task<IActionResult> Create(Customer customer) => Ok(await _service.CreateAsync(customer));
+    public async Task<IActionResult> Create([FromBody] CustomerRequest customerRequest) =>
+        BaseBodyResponse.Success(await customerService.CreateAsync(customerRequest), "Create customer successfully");
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Customer customer)
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] CustomerRequest updateRequest)
     {
-        customer.Id = id;
-        var updated = await _service.UpdateAsync(customer);
-        return Ok(updated);
+        var updated = await customerService.UpdateAsync(id, updateRequest);
+        return BaseBodyResponse.Success(updated, "Update customer successfully");
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete([FromRoute] int id)
     {
-        await _service.SoftDeleteAsync(id);
-        return NoContent();
+        await customerService.SoftDeleteAsync(id);
+        return BaseBodyResponse.Success(null, "Delete customer successfully");
     }
 }

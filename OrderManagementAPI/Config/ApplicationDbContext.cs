@@ -1,16 +1,18 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using OrderManagementAPI.Models;
+using OrderManagementAPI.Security;
 
 namespace OrderManagementAPI.Config;
 
 public class ApplicationDbContext : DbContext
 {
     private readonly string? _connectionString;
+    private readonly ICurrentUserService  _currentUserService;
 
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService)
         : base(options)
     {
+        _currentUserService = currentUserService;
     }
 
     public ApplicationDbContext(string connectionString)
@@ -53,57 +55,6 @@ public class ApplicationDbContext : DbContext
             .WithMany(r => r.UserRoles)
             .HasForeignKey(ur => ur.RoleId);
         
-        // Seed roles
-        modelBuilder.Entity<Role>().HasData(
-            new Role { Id = 1, Name = "Admin" },
-            new Role { Id = 2, Name = "User" },
-            new Role { Id = 3, Name = "Manager" },
-            new Role { Id = 4, Name = "Staff" }
-        );
-        
-        // Optional: Seed a sample user (password hash example: "admin123")
-        modelBuilder.Entity<User>().HasData(
-            new User
-            {
-                Id = 1,
-                Username = "admin",
-                Password = "$2a$12$C6UzMDM.H6dfI/f/IKcEeOaHFS0jzLjwHlQ1P2z1ZbG9vG2NnQpG6", // Use BCrypt to hash
-                FullName = "Administrator",
-                Email = "admin@example.com",
-                Phone = "1234567890",
-                IsActive = true,
-                CreatedAt = new DateTime(2025, 9, 18, 0, 0, 0, DateTimeKind.Utc),
-                UpdatedAt = null
-            },
-            new User
-            {
-                Id = 2,
-                Username = "staff",
-                Password = "$2a$12$wIuG5n5h.TmXYiL5mJfH3eG7FJ6vI8t2qX2WJxg4vQ0Zc0YxA9zGq", // Use BCrypt to hash
-                FullName = "Staff",
-                Email = "staff@example.com",
-                Phone = "1234567890",
-                IsActive = true,
-                CreatedAt = new DateTime(2025, 9, 18, 0, 0, 0, DateTimeKind.Utc),
-                UpdatedAt = null
-            }
-        );
-        
-        modelBuilder.Entity<UserRole>().HasData(
-            new UserRole
-            {
-                UserId = 1, // Admin user
-                RoleId = 1,  // Admin role
-                AssignedAt = new DateTime(2025, 9, 18, 0, 0, 0, DateTimeKind.Utc)
-            },
-            new UserRole
-            {
-                UserId = 2, // Staff user
-                RoleId = 4,  // Staff role
-                AssignedAt = new DateTime(2025, 9, 18, 0, 0, 0, DateTimeKind.Utc)
-            }
-        );
-        
         // Soft delete filter
         modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
         
@@ -129,6 +80,42 @@ public class ApplicationDbContext : DbContext
         
 
         base.OnModelCreating(modelBuilder);
+        
+        // Call extension method for generate Seed data
+        modelBuilder.Seed();
+    }
+    
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var userId = _currentUserService.UserId;
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is AuditableEntity auditable)
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        auditable.CreatedDate = now;
+                        auditable.CreatedBy = userId;
+                        break;
+
+                    case EntityState.Modified:
+                        auditable.UpdatedDate = now;
+                        auditable.UpdatedBy = userId;
+                        break;
+                }
+            }
+
+            if (entry is not { Entity: ISoftDeletable softDeletable, State: EntityState.Deleted }) continue;
+            entry.State = EntityState.Modified; // convert to update instead of physical delete
+            softDeletable.IsDeleted = true;
+            softDeletable.DeletedDate = now;
+            softDeletable.DeletedBy = userId;
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     public DbSet<T> ExecQuery<T>() where T : class

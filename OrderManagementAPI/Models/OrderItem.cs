@@ -24,5 +24,5 @@ public class OrderItem
     [Required]
     public decimal UnitPrice { get; set; }
 
-    public decimal Subtotal { get; set; } = 0m;
+    public decimal Subtotal { get; set; }
 }

@@ -16,7 +16,7 @@ public class BaseBodyResponse
     
     
     // Success with data
-    public static IActionResult Success(object data, string message = "Success")
+    public static IActionResult Success(object? data, string message = "Success")
     {
         var response = new BaseBodyResponse
         {

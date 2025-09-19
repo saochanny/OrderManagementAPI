@@ -1,47 +1,99 @@
+using log4net;
 using Microsoft.EntityFrameworkCore;
 using OrderManagementAPI.Config;
+using OrderManagementAPI.Dto.Request;
+using OrderManagementAPI.Dto.Response;
+using OrderManagementAPI.Exceptions;
 using OrderManagementAPI.Models;
 
 namespace OrderManagementAPI.Services.Impl;
 
-public class OrderServiceImpl(ApplicationDbContext context)
+public class OrderServiceImpl(ApplicationDbContext context) : IOrderService
 {
+    private static readonly ILog Log = LogManager.GetLogger(typeof(OrderServiceImpl));
 
-    public async Task<Order> CreateAsync(Order order)
+    public async Task<OrderResponse> CreateAsync(OrderRequest orderRequest)
     {
+        Log.Debug("Creating order");
         // Prevent creating order if customer is deleted
-        var customer = await context.Customers
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(c => c.Id == order.CustomerId);
+        var customer = await context.Customers.FindAsync(orderRequest.CustomerId);
         if (customer == null || customer.IsDeleted)
-            throw new InvalidOperationException("Cannot create order for deleted customer.");
+        {
+            Log.Error("Customer not found or deleted.");
+            throw new AppException("Cannot create order for deleted customer.");
+        }
 
+        var order = new Order
+        {
+            CustomerId = orderRequest.CustomerId,
+            Items = orderRequest.Items.Select(i => new OrderItem
+            {
+                ProductName = i.ProductName,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice
+            }).ToList()
+        };
+
+        // calculate total amount
         CalculateTotals(order);
 
         context.Orders.Add(order);
         await context.SaveChangesAsync();
-        return order;
+        Log.Debug("Order have been created successfully");
+        return OrderResponse.ToOrderResponse(order);
     }
 
-    public async Task<Order?> UpdateAsync(Order order)
+    public async Task<OrderResponse> UpdateAsync(int id, OrderRequest orderRequest)
     {
-        CalculateTotals(order);
-        context.Orders.Update(order);
-        await context.SaveChangesAsync();
-        return order;
-    }
+        Log.Debug("Updating order");
+        var order = await context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id);
 
-    private void CalculateTotals(Order order)
-    {
-        foreach (var item in order.Items)
+        if (order == null)
         {
-            item.Subtotal = item.Quantity * item.UnitPrice;
+            Log.Error("Order not found");
+            throw new ResourceNotFoundException("Order", id);
         }
-        order.TotalAmount = order.Items.Sum(i => i.Subtotal);
+
+        // Replace items
+        order.Items.Clear();
+        foreach (var i in orderRequest.Items)
+        {
+            order.Items.Add(new OrderItem
+            {
+                ProductName = i.ProductName,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice
+            });
+        }
+
+        // Recalculate total
+        CalculateTotals(order);
+
+        await context.SaveChangesAsync();
+        Log.Debug("Order have been updated successfully");
+        return OrderResponse.ToOrderResponse(order);
     }
 
-    public async Task<List<Order>> GetOrdersAsync(int? customerId = null, DateTime? start = null, DateTime? end = null)
+    public async Task<OrderResponse> GetByIdAsync(int id)
     {
+        var order = await context.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id);
+        if (order != null) return OrderResponse.ToOrderResponse(order);
+        Log.Error("Order not found");
+        throw new ResourceNotFoundException("Order", id);
+    }
+
+
+    private static void CalculateTotals(Order order)
+    {
+        order.TotalAmount = order.Items.Sum(i => i.Quantity * i.UnitPrice);
+    }
+
+    public async Task<List<OrderResponse>> GetOrdersAsync(int? customerId = null, DateTime? start = null,
+        DateTime? end = null)
+    {
+        Log.InfoFormat("Getting orders by customer= {0} startDate= {1} endDate={2}", customerId, start, end);
         var query = context.Orders
             .Include(o => o.Items)
             .Include(o => o.Customer)
@@ -56,6 +108,7 @@ public class OrderServiceImpl(ApplicationDbContext context)
         if (end.HasValue)
             query = query.Where(o => o.OrderDate <= end.Value);
 
-        return await query.ToListAsync();
+        var order = await query.ToListAsync();
+        return order.Select(OrderResponse.ToOrderResponse).ToList();
     }
 }

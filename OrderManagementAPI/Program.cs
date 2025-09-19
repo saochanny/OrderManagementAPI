@@ -78,13 +78,9 @@ builder.Services.AddScoped<EntityFrmwkDaoUtil>();
 builder.Services.AddScoped<IPasswordEncoder, PasswordEncoder>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationServiceImpl>();
 builder.Services.AddScoped<IUserService, UserServiceImpl>();
-//builder.Services.AddScoped<IPersonSevice, PersonServiceImpl>();
-//builder.Services.AddScoped<IDeviceService, DeviceServiceImpl>();
-//builder.Services.AddScoped<IAccessLevelService, AccesslevelImplService>();
-//builder.Services.AddScoped<IAssignDeviceWithWorkLocationService, AssignDeviceWithWorkLocationServiceImpl>();
-//builder.Services.AddScoped<IAccessLevelWithPersonService, AccessLevelWithPersonServiceImpl>();
-//builder.Services.AddScoped<IAccessRecordService, AccessRecordImplService>();
-//builder.Services.AddScoped<IWorkerExcuteApiService, WorkerExcuteApiService>();
+builder.Services.AddScoped<IOrderService, OrderServiceImpl>();
+builder.Services.AddScoped<ICustomerService, CustomerServiceImpl>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 // -------------- End register services -------------- //
 
 

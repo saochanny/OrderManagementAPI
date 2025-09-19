@@ -1,43 +1,45 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OrderManagementAPI.Models;
+using OrderManagementAPI.Dto.Request;
+using OrderManagementAPI.Response;
 using OrderManagementAPI.Services;
 
 namespace OrderManagementAPI.Controllers;
 
-public class OrderController
+[ApiController]
+[Route("api/v1/orders")]
+public class OrdersController(IOrderService orderService) : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class OrdersController : ControllerBase
+    [Authorize(Roles = "Admin, Staff")]
+    [HttpPost]
+    public async Task<IActionResult> CreateOrder([FromBody] OrderRequest order)
     {
-        private readonly IOrderService _service;
-
-        public OrdersController(IOrderService service)
-        {
-            _service = service;
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create(Order order)
-        {
-            var created = await _service.CreateAsync(order);
-            return Ok(created);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Order order)
-        {
-            order.Id = id;
-            var updated = await _service.UpdateAsync(order);
-            return Ok(updated);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int? customerId, [FromQuery] DateTime? start, [FromQuery] DateTime? end)
-        {
-            var orders = await _service.GetOrdersAsync(customerId, start, end);
-            return Ok(orders);
-        }
+        var created = await orderService.CreateAsync(order);
+        return BaseBodyResponse.Success(created, "Order created");
     }
 
+    [Authorize(Roles = "Admin, Staff")]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateOrder([FromRoute] int id, OrderRequest order)
+    {
+        var updated = await orderService.UpdateAsync(id, order);
+        return BaseBodyResponse.Success(updated, "Order updated");
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] int? customerId, [FromQuery] DateTime? start,
+        [FromQuery] DateTime? end)
+    {
+        var orders = await orderService.GetOrdersAsync(customerId, start, end);
+        return BaseBodyResponse.Success(orders, "Orders retrieved");
+    }
+
+    [Authorize]
+    [HttpGet("{orderId:int}")]
+    public async Task<IActionResult> GetOrderById([FromRoute] int orderId)
+    {
+        var orders = await orderService.GetByIdAsync(orderId);
+        return BaseBodyResponse.Success(orders, "Order retrieved");
+    }
 }
