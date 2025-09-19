@@ -1,0 +1,21 @@
+# This is a generated file. Not intended for manual editing.
+version: "3.9"
+services:
+  order-management-api:
+    build:
+      context: "D:\\dotnet\\OrderManagementAPI\\OrderManagementAPI"
+      dockerfile: "Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/OrderManagementAPI.dll"
+    environment:
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "ordermanagementapi:dev"
+    ports: []
+    volumes:
+    - "D:\\dotnet\\OrderManagementAPI\\OrderManagementAPI:/app:rw"
+    - "D:\\dotnet\\OrderManagementAPI:/src:rw"
+    - "C:\\Users\\Dell\\.nuget\\packages:/root/.nuget/packages"
+    working_dir: "/app"

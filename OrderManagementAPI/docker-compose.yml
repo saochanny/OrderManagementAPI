@@ -1,0 +1,17 @@
+services:
+  order-management-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    container_name: order-management-api
+    ports:
+      - "8080:80"   # Map host port 8080 to container port 80
+    environment:
+      # Optional environment variables
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_RUNNING_IN_CONTAINER: true
+      ASPNETCORE_URLS: http://+:80
+
+    restart: always

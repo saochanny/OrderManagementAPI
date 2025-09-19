@@ -1,22 +1,39 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+﻿# -----------------------------
+# Stage 1: Base runtime image
+# -----------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 80
 
+# -----------------------------
+# Stage 2: Build and restore
+# -----------------------------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["OrderManagementAPI/OrderManagementAPI.csproj", "OrderManagementAPI/"]
-RUN dotnet restore "OrderManagementAPI/OrderManagementAPI.csproj"
+
+# Copy only the csproj first to leverage Docker layer caching
+COPY ["OrderManagementAPI.csproj", "./"]
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore "OrderManagementAPI.csproj"
+
+# Copy the rest of the source code
 COPY . .
-WORKDIR "/src/OrderManagementAPI"
-RUN dotnet build "./OrderManagementAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
+# -----------------------------
+# Stage 3: Publish
+# -----------------------------
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./OrderManagementAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+WORKDIR "/src"
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet publish "OrderManagementAPI.csproj" \
+    -c $BUILD_CONFIGURATION \
+    -o /app/publish \
+    /p:UseAppHost=false
 
+# -----------------------------
+# Stage 4: Final image
+# -----------------------------
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .

@@ -1,0 +1,41 @@
+stages:
+  - build
+  - test
+  - docker
+
+variables:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_RUNNING_IN_CONTAINER: "true"
+
+services:
+  - name: mcr.microsoft.com/mssql/server:2022-latest
+    alias: sqlserver
+    command: ["/bin/bash", "-c", "while :; do sleep 10; done"]
+
+before_script:
+  - apt-get update && apt-get install -y curl apt-transport-https ca-certificates gnupg
+  - curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --version 8.0.0
+  - export PATH="$PATH:$HOME/.dotnet"
+
+build:
+  stage: build
+  script:
+    - dotnet restore OrderManagementAPI/OrderManagementAPI.csproj
+    - dotnet build OrderManagementAPI/OrderManagementAPI.csproj -c Release
+
+test:
+  stage: test
+  script:
+    - export ConnectionStrings__DefaultConnection="Server=sqlserver,1433;Database=OrderDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+    - dotnet ef database update --project OrderManagementAPI/OrderManagementAPI.csproj
+    - dotnet test OrderManagementAPI/OrderManagementAPI.csproj
+
+docker:
+  stage: docker
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t ordermanagementapi:ci .
+    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
+    - docker push your-dockerhub-username/ordermanagementapi:latest
