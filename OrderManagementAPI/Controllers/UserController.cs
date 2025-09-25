@@ -35,6 +35,16 @@ public class UserController(IUserService userService) : ControllerBase
     }
     
     [Authorize(Roles = "Admin,Staff")]
+    [HttpGet("paged")]
+    public async Task<IActionResult> GetUsersAsPaged([FromQuery] PaginationRequest request)
+    {
+        // Proceed get user as page...
+        var userResponses = await userService.GetAllAsPageAsync(request);
+
+        return BaseBodyResponse.PageSuccess(userResponses, "Get users as page is successfully");
+    }
+    
+    [Authorize(Roles = "Admin,Staff")]
     [HttpGet("{userId:int}")]
     public async Task<IActionResult> GetById(int userId)
     {

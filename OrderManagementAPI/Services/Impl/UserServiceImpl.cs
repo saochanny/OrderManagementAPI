@@ -5,7 +5,9 @@ using OrderManagementAPI.Constants;
 using OrderManagementAPI.Dto.Request;
 using OrderManagementAPI.Dto.Response;
 using OrderManagementAPI.Exceptions;
+using OrderManagementAPI.Infrastructure.Page;
 using OrderManagementAPI.Models;
+using OrderManagementAPI.Response;
 using OrderManagementAPI.Security;
 
 namespace OrderManagementAPI.Services.Impl;
@@ -52,9 +54,9 @@ public class UserServiceImpl(ApplicationDbContext context, IPasswordEncoder pass
 
         context.Users.Add(user);
         await context.SaveChangesAsync();
-        
+
         Log.Info("Save change user");
-        
+
         // Reload user with roles
         var savedUser = await context.Users
             .Include(u => u.UserRoles)
@@ -76,6 +78,28 @@ public class UserServiceImpl(ApplicationDbContext context, IPasswordEncoder pass
         return users.Select(UserResponse.ToUserResponse).ToList();
     }
 
+    public async Task<Page<UserResponse>> GetAllAsPageAsync(PaginationRequest paginationRequest)
+    {
+        Log.InfoFormat("Get all users as page");
+
+        var pageable = paginationRequest.ToPageable();
+        IQueryable<User> query = context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role);
+
+        // Apply dynamic filters
+        if (paginationRequest.Filter != null && paginationRequest.Filter.Any())
+        {
+            query = query.Where(user =>
+                user.FullName.Contains(paginationRequest.Filter) || user.Email.Contains(paginationRequest.Filter) ||
+                user.Username.Contains(paginationRequest.Filter));
+        }
+
+        var page = await query.ToPageAsync(pageable);
+
+        return page.MapContent(UserResponse.ToUserResponse);
+    }
+
     public async Task<UserResponse> GetByIdAsync(int id)
     {
         Log.InfoFormat("Get user with id {0}", id);
@@ -84,10 +108,10 @@ public class UserServiceImpl(ApplicationDbContext context, IPasswordEncoder pass
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id); // find by id with include for get reference
-        
+
         return user == null ? throw new ResourceNotFoundException("User", id) : UserResponse.ToUserResponse(user);
     }
-    
+
     public async Task<UserResponse> UpdateAsync(int id, UpdateUserRequest updateRequest)
     {
         Log.InfoFormat("Update user with id {0}", id);
@@ -119,7 +143,7 @@ public class UserServiceImpl(ApplicationDbContext context, IPasswordEncoder pass
         }
 
         await context.SaveChangesAsync();
-        
+
         // Reload user with roles
         user = await context.Users
             .Include(u => u.UserRoles)

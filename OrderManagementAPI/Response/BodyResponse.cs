@@ -8,13 +8,13 @@ public class BodyResponse
     public object? Data { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PageResponse? Page { get; set; }
+    public MetaData? Meta { get; set; }
 
     public BodyResponse() { }
 
-    public BodyResponse(object data, PageResponse? page = null)
+    public BodyResponse(object data, MetaData? meta = null)
     {
         Data = data;
-        Page = page;
+        Meta = meta;
     }
 }
