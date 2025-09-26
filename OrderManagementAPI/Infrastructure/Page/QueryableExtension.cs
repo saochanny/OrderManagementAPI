@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using OrderManagementAPI.Response;
 
 namespace OrderManagementAPI.Infrastructure.Page;
 
@@ -29,7 +28,7 @@ public static class QueryableExtensions
         var property = Expression.PropertyOrField(parameter, propertyName);
         var lambda = Expression.Lambda(property, parameter);
 
-        string methodName = ascending ? "OrderBy" : "OrderByDescending";
+        var methodName = ascending ? "OrderBy" : "OrderByDescending";
 
         var result = Expression.Call(
             typeof(Queryable),

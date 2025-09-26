@@ -7,7 +7,6 @@ using OrderManagementAPI.Dto.Response;
 using OrderManagementAPI.Exceptions;
 using OrderManagementAPI.Infrastructure.Page;
 using OrderManagementAPI.Models;
-using OrderManagementAPI.Response;
 using OrderManagementAPI.Security;
 
 namespace OrderManagementAPI.Services.Impl;
@@ -88,11 +87,13 @@ public class UserServiceImpl(ApplicationDbContext context, IPasswordEncoder pass
             .ThenInclude(ur => ur.Role);
 
         // Apply dynamic filters
-        if (paginationRequest.Filter != null && paginationRequest.Filter.Any())
+        if (!string.IsNullOrWhiteSpace(paginationRequest.Filter))
         {
+            var filter = paginationRequest.Filter.Trim();
             query = query.Where(user =>
-                user.FullName.Contains(paginationRequest.Filter) || user.Email.Contains(paginationRequest.Filter) ||
-                user.Username.Contains(paginationRequest.Filter));
+                EF.Functions.Like(user.FullName, $"%{filter}%") ||
+                EF.Functions.Like(user.Email, $"%{filter}%") ||
+                EF.Functions.Like(user.Username, $"%{filter}%"));
         }
 
         var page = await query.ToPageAsync(pageable);

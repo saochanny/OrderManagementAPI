@@ -1,4 +1,6 @@
-namespace OrderManagementAPI.Response;
+using OrderManagementAPI.Response;
+
+namespace OrderManagementAPI.Infrastructure.Page;
 
 public class Page<T>(IEnumerable<T> content, int pageNumber, int pageSize, int totalElements)
 {

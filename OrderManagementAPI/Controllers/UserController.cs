@@ -26,22 +26,12 @@ public class UserController(IUserService userService) : ControllerBase
 
     [Authorize(Roles = "Admin,Staff")]
     [HttpGet]
-    public async Task<IActionResult> GetUsers()
-    {
-        // Proceed with user creation...
-        var userResponses = await userService.GetAllAsync();
-
-        return BaseBodyResponse.Success(userResponses, "Get users successfully");
-    }
-
-    [Authorize(Roles = "Admin,Staff")]
-    [HttpGet("paged")]
     public async Task<IActionResult> GetUsersAsPaged([FromQuery] PaginationRequest request)
     {
         // Proceed get user as page...
         var userResponses = await userService.GetAllAsPageAsync(request);
 
-        return BaseBodyResponse.PageSuccess(userResponses, "Get users as page is successfully");
+        return BaseBodyResponse.PageSuccess(userResponses, "Get users successfully");
     }
 
     [Authorize(Roles = "Admin,Staff")]
