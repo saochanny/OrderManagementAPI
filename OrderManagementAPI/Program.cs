@@ -4,6 +4,7 @@ using log4net.Config;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using OrderManagementAPI.Config;
+using OrderManagementAPI.Database;
 using OrderManagementAPI.Infrastructure.Authentication;
 using OrderManagementAPI.Middleware;
 using OrderManagementAPI.Response;
@@ -168,6 +169,13 @@ if (app.Environment.IsDevelopment())
 
 // configure global context for BaseBodyResponse
 BaseBodyResponse.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+     await dbContext.Database.EnsureCreatedAsync();
+    DataSeeder.Seed(dbContext, usersCount: 50, customersCount: 100);
+}
 
 app.UseRouting();
 

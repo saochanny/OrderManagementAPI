@@ -89,11 +89,11 @@ public class UserServiceImpl(ApplicationDbContext context, IPasswordEncoder pass
         // Apply dynamic filters
         if (!string.IsNullOrWhiteSpace(paginationRequest.Filter))
         {
-            var filter = paginationRequest.Filter.Trim();
+            var filter = paginationRequest.Filter.Trim().ToLower();
             query = query.Where(user =>
-                EF.Functions.Like(user.FullName, $"%{filter}%") ||
-                EF.Functions.Like(user.Email, $"%{filter}%") ||
-                EF.Functions.Like(user.Username, $"%{filter}%"));
+                EF.Functions.Like(user.FullName.ToLower(), $"%{filter}%") ||
+                EF.Functions.Like(user.Email.ToLower(), $"%{filter}%") ||
+                EF.Functions.Like(user.Username.ToLower(), $"%{filter}%"));
         }
 
         var page = await query.ToPageAsync(pageable);
