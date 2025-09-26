@@ -1,30 +1,20 @@
 namespace OrderManagementAPI.Response;
 
-public class Page<T>
+public class Page<T>(IEnumerable<T> content, int pageNumber, int pageSize, int totalElements)
 {
-    public IEnumerable<T> Content { get; set; } = [];
-    public int PageNumber { get; set; }     // current page (0-based like Spring)
-    public int PageSize { get; set; }
-    public int TotalElements { get; set; }
+    public IEnumerable<T> Content { get; set; } = content;
+    public int PageNumber { get; set; } = pageNumber; // current page (0-based like Spring)
+    public int PageSize { get; set; } = pageSize;
+    public int TotalElements { get; set; } = totalElements;
     public int TotalPages => (int)Math.Ceiling((double)TotalElements / PageSize);
     public bool IsFirst => PageNumber == 0;
     public bool IsLast => PageNumber >= TotalPages - 1;
-
-    public Page() {}
-
+    
     public MetaData GetMetaData()
     {
         return new MetaData(TotalPages, PageNumber, TotalElements, PageSize );
     }
 
-    public Page(IEnumerable<T> content, int pageNumber, int pageSize, int totalElements)
-    {
-        Content = content;
-        PageNumber = pageNumber;
-        PageSize = pageSize;
-        TotalElements = totalElements;
-    }
-    
     /// <summary>
     /// Map the content of the page to another type while keeping pagination info
     /// </summary>

@@ -15,8 +15,8 @@ public class CustomersController(ICustomerService customerService) : ControllerB
     [HttpGet]
     public async Task<IActionResult> GetAll() =>
         BaseBodyResponse.Success(await customerService.GetAllAsync(), "Get all customers successfully");
-    
-    
+
+
     [Authorize(Roles = "Admin, Staff")]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById([FromRoute] int id) =>

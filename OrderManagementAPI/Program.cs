@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using OrderManagementAPI.Config;
 using OrderManagementAPI.Infrastructure.Authentication;
 using OrderManagementAPI.Middleware;
+using OrderManagementAPI.Response;
 using OrderManagementAPI.Security;
 using OrderManagementAPI.Services;
 using OrderManagementAPI.Services.Impl;
@@ -164,6 +165,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "OrderManagement API v1"); });
 }
+
+// configure global context for BaseBodyResponse
+BaseBodyResponse.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 
 app.UseRouting();
 

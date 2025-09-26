@@ -18,10 +18,11 @@ public class AuthenticationController(IAuthenticationService authService) : Cont
             ? BaseBodyResponse.Failed(StatusCodes.Status400BadRequest, "Invalid input")
             : BaseBodyResponse.Success(await authService.LoginAsync(request), MessageConstant.LoginSuccess);
     }
+
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> FetchMe()
     {
-         return BaseBodyResponse.Success(await authService.FetchMe(), "Fetch user information");
+        return BaseBodyResponse.Success(await authService.FetchMe(), "Fetch user information");
     }
 }

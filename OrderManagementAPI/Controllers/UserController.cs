@@ -33,7 +33,7 @@ public class UserController(IUserService userService) : ControllerBase
 
         return BaseBodyResponse.Success(userResponses, "Get users successfully");
     }
-    
+
     [Authorize(Roles = "Admin,Staff")]
     [HttpGet("paged")]
     public async Task<IActionResult> GetUsersAsPaged([FromQuery] PaginationRequest request)
@@ -43,7 +43,7 @@ public class UserController(IUserService userService) : ControllerBase
 
         return BaseBodyResponse.PageSuccess(userResponses, "Get users as page is successfully");
     }
-    
+
     [Authorize(Roles = "Admin,Staff")]
     [HttpGet("{userId:int}")]
     public async Task<IActionResult> GetById(int userId)

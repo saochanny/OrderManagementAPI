@@ -13,8 +13,8 @@ namespace OrderManagementAPI.Middleware;
 public class GlobalExceptionHandler(RequestDelegate next)
 {
     private static readonly ILog Log = LogManager.GetLogger(typeof(GlobalExceptionHandler));
-    
-    
+
+
     /// <summary>
     /// Invokes the middleware to process the HTTP context.
     /// Catches all unhandled exceptions, logs them, and writes a structured JSON response.
@@ -29,12 +29,13 @@ public class GlobalExceptionHandler(RequestDelegate next)
         catch (Exception ex)
         {
             // Log the exception with stack trace
-            Log.ErrorFormat("Unhandled exception occurred while processing request to {0} , {1}", context.Request.Path, ex);
+            Log.ErrorFormat("Unhandled exception occurred while processing request to {0} , {1}", context.Request.Path,
+                ex);
             await HandleExceptionAsync(context, ex);
         }
     }
-    
-    
+
+
     /// <summary>
     /// Handles the exception by mapping it to a proper HTTP status code and returning
     /// a <see cref="BaseBodyResponse"/> in JSON format.
@@ -57,7 +58,7 @@ public class GlobalExceptionHandler(RequestDelegate next)
             _ => StatusCodes.Status500InternalServerError
         };
 
-        
+
         // Get the error message
         var message = exception switch
         {
@@ -79,5 +80,4 @@ public class GlobalExceptionHandler(RequestDelegate next)
 
         return context.Response.WriteAsJsonAsync(response);
     }
-    
 }
