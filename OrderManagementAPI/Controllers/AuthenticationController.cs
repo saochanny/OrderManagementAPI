@@ -14,9 +14,7 @@ public class AuthenticationController(IAuthenticationService authService) : Cont
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        return !ModelState.IsValid
-            ? BaseBodyResponse.Failed(StatusCodes.Status400BadRequest, "Invalid input")
-            : BaseBodyResponse.Success(await authService.LoginAsync(request), MessageConstant.LoginSuccess);
+        return BaseBodyResponse.Success(await authService.LoginAsync(request), MessageConstant.LoginSuccess);
     }
 
     [Authorize]

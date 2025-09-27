@@ -42,96 +42,57 @@ public class BaseBodyResponse
     public string? Path { get; set; }
 
 
-    // Success with data
+    // -------------------
+    // Factory methods for success/failure responses
     public static IActionResult Success(object? data, string message = "Success")
-    {
-        var response = new BaseBodyResponse
-        {
-            IsSuccess = true,
-            Status = new StatusResponse(StatusCodes.Status200OK, message),
-            Data = data,
-            TimeStamp = DateTime.UtcNow,
-            TraceId = Activity.Current?.TraceId.ToString(),
-            Path = CurrentPath
-        };
+        => BuildResponse(true, StatusCodes.Status200OK, message, data);
 
-        return new ObjectResult(response)
-        {
-            StatusCode = StatusCodes.Status200OK,
-            ContentTypes = { MediaTypeNames.Application.Json }
-        };
-    }
+    public static IActionResult SuccessMessage(string message = "Success")
+        => BuildResponse(true, StatusCodes.Status200OK, message);
 
-
-    // Success with page
     public static IActionResult PageSuccess<T>(Page<T> page, string message = "Success")
     {
-        var response = new BaseBodyResponse
-        {
-            IsSuccess = true,
-            Status = new StatusResponse(StatusCodes.Status200OK, message),
-            Data = page.Content,
-            Meta = page.GetMetaData(),
-            TimeStamp = DateTime.UtcNow,
-            TraceId = Activity.Current?.TraceId.ToString(),
-            Path = CurrentPath
-        };
-
-        return new ObjectResult(response)
-        {
-            StatusCode = StatusCodes.Status200OK,
-            ContentTypes = { MediaTypeNames.Application.Json }
-        };
+        var response = BuildBaseResponse(true, StatusCodes.Status200OK, message);
+        response.Data = page.Content;
+        response.Meta = page.GetMetaData();
+        return BuildObjectResult(response, StatusCodes.Status200OK);
     }
 
-    // Success with message only
-    public static IActionResult SuccessMessage(string message = "Success")
-    {
-        var response = new BaseBodyResponse
-        {
-            IsSuccess = true,
-            Status = new StatusResponse(StatusCodes.Status200OK, message),
-            TimeStamp = DateTime.UtcNow,
-            TraceId = Activity.Current?.TraceId.ToString(),
-            Path = CurrentPath
-        };
-
-        return new ObjectResult(response)
-        {
-            StatusCode = StatusCodes.Status200OK,
-            ContentTypes = { MediaTypeNames.Application.Json }
-        };
-    }
-
-    // Failed
     public static IActionResult Failed(int statusCode, string message)
+        => BuildResponse(false, statusCode, message);
+
+    public static BaseBodyResponse BodyFailed(int statusCode, string message)
+        => BuildBaseResponse(false, statusCode, message);
+    
+    
+    // -------------------
+    // Internal helper: centralize common initialization
+    private static BaseBodyResponse BuildBaseResponse(bool isSuccess, int statusCode, string message)
     {
-        var response = new BaseBodyResponse
+        return new BaseBodyResponse
         {
-            IsSuccess = false,
+            IsSuccess = isSuccess,
             Status = new StatusResponse(statusCode, message),
             TimeStamp = DateTime.UtcNow,
-            TraceId = Activity.Current?.TraceId.ToString(),
+            TraceId = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString(),
             Path = CurrentPath
         };
+    }
 
-        return new ObjectResult(response)
+    private static IActionResult BuildResponse(bool isSuccess, int statusCode, string message, object? data = null)
+    {
+        var response = BuildBaseResponse(isSuccess, statusCode, message);
+        response.Data = data;
+        return BuildObjectResult(response, statusCode);
+    }
+    
+    
+    // -------------------
+    // Internal helper
+    private static ObjectResult BuildObjectResult(BaseBodyResponse response, int statusCode)
+        => new(response)
         {
             StatusCode = statusCode,
             ContentTypes = { MediaTypeNames.Application.Json }
         };
-    }
-
-    // Body failed (returns object, not IActionResult)
-    public static BaseBodyResponse BodyFailed(int statusCode, string message)
-    {
-        return new BaseBodyResponse
-        {
-            IsSuccess = false,
-            Status = new StatusResponse(statusCode, message),
-            TimeStamp = DateTime.UtcNow,
-            TraceId = Activity.Current?.TraceId.ToString(),
-            Path = CurrentPath
-        };
-    }
 }

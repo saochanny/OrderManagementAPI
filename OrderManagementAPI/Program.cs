@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using OrderManagementAPI.Config;
 using OrderManagementAPI.Database;
 using OrderManagementAPI.Infrastructure.Authentication;
+using OrderManagementAPI.Infrastructure.Filter;
 using OrderManagementAPI.Middleware;
 using OrderManagementAPI.Response;
 using OrderManagementAPI.Security;
@@ -87,8 +88,14 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 
 // -------------- Force to response snakes case -------------- //
-builder.Services.AddControllers()
-    .AddJsonOptions(options => { options.JsonSerializerOptions.IncludeFields = true; });
+builder.Services.AddControllers(options=>
+    {
+        options.Filters.Add<ValidateModelAttribute>();
+    })  // I want to use global filter for validation Model of Request 
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.IncludeFields = true;
+    });
 
 // Add JWT Authentication from extension
 builder.Services.AddJwtAuthentication(builder.Configuration);
