@@ -19,8 +19,11 @@ public static class AesEncryptionUtil
         using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
         using var memoryStream = new MemoryStream();
         using var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write);
-        using var streamWriter = new StreamWriter(cryptoStream);
-        streamWriter.Write(json);
+        using (var streamWriter = new StreamWriter(cryptoStream))
+        {
+            streamWriter.Write(json);
+        } // disposing writer flushes CryptoStream
+        
         return Convert.ToBase64String(memoryStream.ToArray());
 
     }
